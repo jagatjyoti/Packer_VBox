@@ -1,0 +1,47 @@
+{
+  "variables": {
+    "ssh_username": "root",
+    "ssh_password": "root@123"
+  },
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "iso_urls": [
+          "CentOS-7-x86_64-Minimal-1708.iso",
+          "http://centos.mirror.net.in/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1708.iso"
+      ],
+      "iso_checksum": "5848f2fd31c7acf3811ad88eaca6f4aa",
+      "iso_checksum_type": "md5",
+      "vm_name": "CentOS-server",
+      "guest_os_type": "RedHat_64",
+      "output_directory": "builds",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "20000s",
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--memory", "4096"],
+        ["modifyvm", "{{.Name}}", "--cpus", "2"],
+        ["modifyvm", "{{.Name}}", "--audio", "none"],
+        ["modifyvm", "{{.Name}}", "--nic1", "nat"],
+        ["modifyvm", "{{.Name}}", "--nic2", "hostonly", "--hostonlyadapter2", "vboxnet0"],
+        ["createmedium", "disk", "--filename", "mongo.vdi", "--size", "78000"],
+        ["storagectl", "CentOS-server", "--add", "sata", "--controller", "IntelAHCI", "--name", "SATA Controller"],
+        ["storageattach", "CentOS-server", "--storagectl", "SATA Controller", "--port", "1", "--device", "0", "--type", "hdd", "--medium", "mongo.vdi"]
+      ],
+      "disk_size": "100000",
+      "http_directory": "http",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+      ],
+      "format": "ova",
+      "shutdown_command": "/sbin/halt -p"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "scripts/utility_install.sh"
+    }
+  ]
+}
